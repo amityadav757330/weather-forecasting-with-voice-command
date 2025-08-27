@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Weather Forecast - Amit Yadav</title>
+<style>
+/* Global Styles */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #fff;
+  background: linear-gradient(-45deg, #ff6a00, #ee0979, #00b4d8, #2575fc);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  transition: background 1.5s ease-in-out;
+  overflow: hidden;
+}
+
+@keyframes gradientBG {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+.container {
+  width: 95%;
+  max-width: 780px;
+  padding: 30px;
+  text-align: center;
+  border-radius: 25px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  animation: fadeIn 1.5s ease-in-out;
+  position: relative;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(-30px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+header {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  background: linear-gradient(to right, #ffeb3b, #ff6a00, #ee0979, #2575fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% {transform: scale(1);}
+  50% {transform: scale(1.08);}
+}
+
+.time {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  color: #e0e0e0;
+}
+
+input {
+  width: 70%;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15);
+  outline: none;
+  color: #fff;
+  margin-bottom: 12px;
+  transition: 0.3s;
+}
+input:focus {
+  border-color: #ffeb3b;
+  background: rgba(255,255,255,0.25);
+}
+
+button {
+  padding: 12px 25px;
+  background: linear-gradient(90deg, #ff6a00, #ee0979, #6a11cb);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(255,255,255,0.6);
+}
+
+.toggle {
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #ffeb3b;
+  text-decoration: underline;
+  transition: 0.3s;
+}
+.toggle:hover {
+  color: #fff176;
+}
+
+#loading {
+  margin-top: 15px;
+  font-size: 1rem;
+  display: none;
+}
+
+#weatherResult {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  animation: fadeIn 1.5s ease-in-out;
+}
+
+.forecast {
+  display: flex;
+  justify-content: start;
+  margin-top: 20px;
+  gap: 15px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: thin;
+}
+.forecast::-webkit-scrollbar {
+  height: 8px;
+}
+.forecast::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.4);
+  border-radius: 10px;
+}
+
+.day-card {
+  background: rgba(255,255,255,0.2);
+  padding: 15px;
+  border-radius: 16px;
+  width: 120px;
+  text-align: center;
+  font-size: 0.95rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+.day-card:hover {
+  transform: scale(1.1);
+  background: rgba(255,255,255,0.35);
+}
+.day-card p {
+  font-size: 1.2rem;
+}
+
+.footer {
+  margin-top: 25px;
+  font-size: 0.9rem;
+  color: #ddd;
+  opacity: 0.8;
+}
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>Weather Forecast by Amit Yadav</header>
+    <div class="time" id="timeDisplay">Loading time...</div>
+
+    <input type="text" id="cityInput" placeholder="Enter city name" />
+    <br />
+    <button onclick="getWeather()">Search</button>
+    <div class="toggle" onclick="toggleUnit()">Switch to °F</div>
+
+    <div id="loading">Fetching weather data...</div>
+    <div id="weatherResult"></div>
+    <div id="forecast" class="forecast"></div>
+
+    <div class="footer">Created with ❤️ by Amit Yadav</div>
+  </div>
+
+<script>
+let unit = "C";
+setInterval(updateTime, 1000);
+function updateTime() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('timeDisplay').innerHTML = 
+    `${now.toLocaleTimeString()} | ${now.toLocaleDateString(undefined, options)}`;
+}
+
+async function getWeather() {
+  const city = document.getElementById('cityInput').value;
+  if (!city) {
+    alert('Please enter a city name');
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('weatherResult').innerHTML = '';
+  document.getElementById('forecast').innerHTML = '';
+
+  const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`;
+  const geoRes = await fetch(geoUrl);
+  const geoData = await geoRes.json();
+
+  if (!geoData.results || geoData.results.length === 0) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('weatherResult').innerHTML = 'City not found';
+    return;
+  }
+
+  const { latitude, longitude, name, country } = geoData.results[0];
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode,sunrise,sunset&timezone=auto`;
+  const weatherRes = await fetch(weatherUrl);
+  const weatherData = await weatherRes.json();
+
+  const current = weatherData.current;
+  const daily = weatherData.daily;
+
+  let temp = current.temperature_2m;
+  let feelsLike = current.apparent_temperature;
+  let humidity = current.relative_humidity_2m;
+  let wind = current.wind_speed_10m;
+  let code = current.weathercode;
+  let desc = getWeatherDescription(code);
+  let icon = getWeatherIcon(code);
+
+  if (unit === "F") {
+    temp = (temp * 9/5) + 32;
+    feelsLike = (feelsLike * 9/5) + 32;
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('weatherResult').innerHTML = `
+    <h3>${name}, ${country}</h3>
+    <p style="font-size:2rem;">${icon}</p>
+    <p>${desc}</p>
+    <p>🌡 Temperature: ${temp.toFixed(1)}°${unit}</p>
+    <p>🤔 Feels Like: ${feelsLike.toFixed(1)}°${unit}</p>
+    <p>💧 Humidity: ${humidity}% | 🌬 Wind: ${wind} km/h</p>
+    <p>🌅 Sunrise: ${new Date(daily.sunrise[0]).toLocaleTimeString()} | 🌇 Sunset: ${new Date(daily.sunset[0]).toLocaleTimeString()}</p>
+  `;
+
+  // Change background for day/night
+  const now = new Date();
+  const sunrise = new Date(daily.sunrise[0]);
+  const sunset = new Date(daily.sunset[0]);
+  if (now >= sunrise && now <= sunset) {
+    document.body.style.background = "linear-gradient(-45deg,#ff6a00,#ffcc70,#f9d423,#ff6f61)";
+  } else {
+    document.body.style.background = "linear-gradient(-45deg,#0f2027,#203a43,#2c5364,#1a2980)";
+  }
+
+  // Speak weather details
+  speakWeather(`${name}, ${country}. ${desc}. Temperature ${temp.toFixed(1)} degrees ${unit}. Humidity ${humidity} percent.`);
+
+  // Display 5-day forecast
+  for (let i = 0; i < 5; i++) {
+    let max = daily.temperature_2m_max[i];
+    let min = daily.temperature_2m_min[i];
+    if (unit === "F") {
+      max = (max * 9/5) + 32;
+      min = (min * 9/5) + 32;
+    }
+    const dayIcon = getWeatherIcon(daily.weathercode[i]);
+    const dayName = new Date(daily.time[i]).toLocaleDateString('en-US', { weekday: 'short' });
+    document.getElementById('forecast').innerHTML += `
+      <div class="day-card">
+        <strong>${dayName}</strong>
+        <p style="font-size:1.8rem;">${dayIcon}</p>
+        <p>${max.toFixed(0)}° / ${min.toFixed(0)}°</p>
+      </div>
+    `;
+  }
+}
+
+function getWeatherDescription(code) {
+  const descriptions = {
+    0: "Clear Sky", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
+    45: "Fog", 48: "Rime Fog", 51: "Light Drizzle", 61: "Rain", 71: "Snow"
+  };
+  return descriptions[code] || "Unknown";
+}
+
+function getWeatherIcon(code) {
+  if ([0].includes(code)) return "☀️";
+  if ([1,2].includes(code)) return "🌤";
+  if ([3].includes(code)) return "☁️";
+  if ([45,48].includes(code)) return "🌫";
+  if ([51,61].includes(code)) return "🌧";
+  if ([71].includes(code)) return "❄️";
+  return "🌍";
+}
+
+function speakWeather(text) {
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "en-US";
+  window.speechSynthesis.speak(speech);
+}
+
+function toggleUnit() {
+  unit = unit === "C" ? "F" : "C";
+  document.querySelector('.toggle').innerText = `Switch to °${unit === "C" ? "F" : "C"}`;
+  getWeather();
+}
+</script>
+</body>
+</html>
