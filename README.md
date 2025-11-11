@@ -36,5 +36,3 @@ You can either **type** your city name or **speak it**, and the assistant will r
 
 ---
 
-## 📸 Preview
-*(Add your screenshot here)*  
